@@ -59,7 +59,11 @@ plugin's root as a rule that is always on, and this file is for contributors, no
    message) and the end of the session (`SessionEnd`). Tool calls and their output, file contents,
    the model's reasoning and injected context never reach it, and past.dev's own block is dropped by
    its header. A prompt that only runs one of the plugin's skills (`/past:…`) is not conversation,
-   and neither is its reply. A session whose journal records no prompt is never sent.
+   and neither is its reply. A session whose journal records no prompt is never sent. Nothing is
+   journaled before the machine is connected (no `apiKey`), with sending turned off
+   (`ingest: false`), or in a folder `deny` names: `prompt` writes no entry, and `stop` and `end`
+   only add to a journal that already exists. So a session is read from the first prompt after
+   `/past:connect`, as connect says, and nothing typed before it is ever sent.
 3. **A reply belongs to its prompt by `prompt_id`.** Devin gives every hook of a turn the same
    `prompt_id`. A reply with an id answers the latest prompt only when the ids match, so a second
    Stop of the same turn (a hook that kept the agent working) adds a second reply, and a reply to a

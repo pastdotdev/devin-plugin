@@ -764,7 +764,9 @@ async function modePrompt(config) {
   const prompt = typeof input.prompt === 'string' ? input.prompt : '';
   const place = placeOf(input);
   if (!prompt || denied(config, place.cwd)) return;
-  if (session && config.ingest) {
+  // Nothing is journaled before the machine is connected: connect says sessions are read from the
+  // next prompt on, so a journal written before it would be sent at the first send after it.
+  if (session && config.ingest && config.apiKey) {
     try {
       appendJournal(session, { kind: 'prompt', at: new Date().toISOString(), promptId: promptIdOf(input), text: prompt, ...place });
     } catch { /* the prompt still goes through */ }
