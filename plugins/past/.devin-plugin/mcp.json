@@ -1,8 +1,13 @@
 {
   "mcpServers": {
     "past": {
-      "command": "node",
-      "args": ["${PLUGIN_ROOT}/bin/past-hook.mjs", "mcp"]
+      "command": "sh",
+      "args": [
+        "-c",
+        "root=$1; case $root in \"\"|*\"\\${\"*) root=${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-${DEVIN_PLUGIN_ROOT:-}}} ;; esac; [ -f \"$root/bin/past\" ] || root=$PWD; if [ ! -f \"$root/bin/past\" ] && [ -f \"$HOME/.past/devin/past.mjs\" ]; then root=$(sed -n \"s|.*file://\\(.*\\)/bin/past-hook\\.mjs.*|\\1|p\" \"$HOME/.past/devin/past.mjs\"); fi; [ -f \"$root/bin/past\" ] || { echo \"past.dev: the plugin folder was not found\" >&2; exit 1; }; exec sh \"$root/bin/past\" mcp",
+        "past",
+        "${PLUGIN_ROOT}"
+      ]
     }
   }
 }

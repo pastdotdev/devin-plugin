@@ -48,7 +48,7 @@ const MIN_SITTING_KILOBYTES = 10;
 const CREDIT_PAUSE_MS = { ingest: 30 * 60000, recall: 5 * 60000 };
 const DEFAULT_API_URL = 'https://api.past.dev';
 const MARKER = '=== past · recalled from memory ===';
-const VERSION = '0.1.1';
+const VERSION = '0.1.2';
 
 // ----------------------------------------------------------------------------------------- Devin
 

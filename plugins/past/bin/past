@@ -1,0 +1,30 @@
+#!/bin/sh
+# Runs the plugin's script with Node, for the hooks and the MCP server. Devin starts both in a shell
+# that has not read the person's profile, so a Node installed with nvm, Volta or fnm is not on its
+# path: Devin's cloud machines carry Node only under ~/.nvm, and a bare `node` there exits 127.
+script="$(dirname "$0")/past-hook.mjs"
+
+node="$(command -v node 2>/dev/null)"
+if [ -z "$node" ] && [ -n "$NVM_BIN" ] && [ -x "$NVM_BIN/node" ]; then
+  node="$NVM_BIN/node"
+fi
+if [ -z "$node" ]; then
+  # nvm's versions come in name order, so the last is the newest from v10 up.
+  for candidate in "$HOME"/.nvm/versions/node/v*/bin/node; do
+    if [ -x "$candidate" ]; then node="$candidate"; fi
+  done
+fi
+for candidate in "$HOME/.volta/bin/node" "$HOME/.local/share/fnm/aliases/default/bin/node" \
+  "$HOME/.fnm/aliases/default/bin/node" /usr/local/bin/node /opt/homebrew/bin/node; do
+  if [ -z "$node" ] && [ -x "$candidate" ]; then node="$candidate"; fi
+done
+
+if [ -z "$node" ]; then
+  echo "past.dev: Node.js 16 or later was not found on this machine." >&2
+  # A hook never breaks the session (AGENTS.md, rule 1); the MCP server and the commands say so.
+  case "$1" in
+    start|prompt|stop|end) exit 0 ;;
+    *) exit 1 ;;
+  esac
+fi
+exec "$node" "$script" "$@"

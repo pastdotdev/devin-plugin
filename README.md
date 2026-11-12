@@ -20,7 +20,8 @@ every prompt. The decisions, the reasons behind them, what was already tried and
 That block is what the model reads beside your prompt. It arrives on its own: the model does not
 have to decide to look anything up. For more, the agent calls the `past_recall` tool.
 
-The plugin runs on your machine. Devin's cloud sessions do not run a plugin's hooks.
+The plugin runs where the session runs: on your machine in the Devin CLI and Devin Desktop, and
+on the session's machine in a cloud session.
 
 ## Get started
 
@@ -153,8 +154,8 @@ than in the conversation.
 - **The project is out of credits.** Sending and recall pause instead of asking again on every
   turn, and nothing is lost: your sessions stay on this machine. After you add credits, run
   `/past:status --refresh`.
-- **The hooks stay silent.** They call `node`. Node 16 or later has to come first on the path
-  Devin runs them with.
+- **The hooks stay silent.** They start Node through `bin/past`, which looks for it on the path,
+  then under nvm, Volta and fnm. Node 16 or later has to be in one of those places.
 
 ## Remove it
 
@@ -176,6 +177,7 @@ plugins/past/
   .devin-plugin/mcp.json      the past_recall tool, served by the same script
   hooks.json                  the four hooks
   skills/                     past, connect, status, cut, ingest
+  bin/past                    finds Node and runs the script, for the hooks and the tool
   bin/past-hook.mjs           the whole plugin: one file, Node 16, no dependencies
 ```
 
