@@ -48,7 +48,7 @@ You need the Devin CLI or Devin Desktop, signed in (`devin auth login`), and Nod
 
 4. **Check it.** `/past:status` shows the project it talks to, and what it has sent.
 
-Sessions are read from your next prompt on.
+Sessions are read from your next prompt on. Nothing you type before connecting is kept or sent.
 
 ## How it works
 
@@ -83,17 +83,29 @@ afternoon is sent once, with everything in it.
 
 ## What leaves your machine
 
-Your prompts as you typed them, the agent's final reply to each, and the project and branch names.
-Nothing else.
+Your prompts as you typed them and the agent's final reply to each, with the time of each. With
+every sitting go the identity you connected with, the audience if you chose one, the session's
+name, the name of the project folder, the git branch, and the sitting's number and count of turns.
+The folder's path stays on your machine.
 
-Never sent: tool calls and their output, file contents, diffs, command output, attachments, the
-model's thinking, and anything injected into the session rather than typed by a person. Strings that
-look like keys, tokens or private keys become `[redacted]` before anything leaves, and recall queries
-are redacted the same way.
+Recall sends queries too, with your identity: at the start of a session, one that names the project
+folder; before a prompt of 12 characters or more, its first 1,000 characters; and whatever question
+the agent asks the `past_recall` tool.
 
-`/past:cut` prints exactly what would be sent from a session, sitting by sitting, before anything is.
-Until a session is sent, and afterwards, its prompts and replies are kept in `~/.past/devin/`,
-readable only by you.
+Never sent: tool calls and their output, the files the agent read, the diffs it made, the output of
+the commands it ran, attachments, the model's thinking, and anything injected into the session
+rather than typed by a person. What you paste into a prompt, and what the agent quotes in its final
+reply, is part of the conversation and travels with it. Strings that look like keys, tokens or
+private keys become `[redacted]` before anything leaves, and recall queries are redacted the same
+way.
+
+From 0.1.1 on, what you type under one project's key is only ever sent with that key. After you
+connect to another project, what was typed for the first stays on your machine.
+
+`/past:cut` prints the conversation that would be sent from a session, sitting by sitting, before
+anything is. Until a session is sent, and afterwards, its prompts and replies are kept in
+`~/.past/devin/`, readable only by you. Version 0.1.0 also kept there what was typed before
+connecting: it is never sent, and you can delete those files.
 
 A session costs what its prose costs, at 350 bytes to a credit. What a recall costs depends on your
 plan: see [past.dev/pricing](https://past.dev/pricing).

@@ -59,7 +59,11 @@ plugin's root as a rule that is always on, and this file is for contributors, no
    message) and the end of the session (`SessionEnd`). Tool calls and their output, file contents,
    the model's reasoning and injected context never reach it, and past.dev's own block is dropped by
    its header. A prompt that only runs one of the plugin's skills (`/past:…`) is not conversation,
-   and neither is its reply. A session whose journal records no prompt is never sent.
+   and neither is its reply. A session whose journal records no prompt is never sent. Nothing is
+   journaled before the machine is connected (no `apiKey`), with sending turned off
+   (`ingest: false`), or in a folder `deny` names: `prompt` writes no entry, and `stop` and `end`
+   write none without a key and only add to a journal that already exists. So a session is read from the first prompt after
+   `/past:connect`, as connect says, and nothing typed before it is ever sent.
 3. **A reply belongs to its prompt by `prompt_id`.** Devin gives every hook of a turn the same
    `prompt_id`. A reply with an id answers the latest prompt only when the ids match, so a second
    Stop of the same turn (a hook that kept the agent working) adds a second reply, and a reply to a
@@ -90,7 +94,8 @@ plugin's root as a rule that is always on, and this file is for contributors, no
    `sittingKilobytes` of prose (50 by default, 10 at least, measured on the turns' own text). An
    agent that works for hours without a pause never goes quiet, and without the size its session
    would be one sitting, sent whole again each time it grew. The size cut waits for the agent to
-   have answered, so a prompt is never parted from its first answer. `state.json` keeps one hash
+   have answered, so a prompt is never parted from its first answer. A sitting also starts at a
+   prompt typed under another connection (rule 14). `state.json` keeps one hash
    per sitting and pins `sittingMinutes` and `sittingKilobytes` per session at its first send, so a
    changed value never moves the boundaries of a session already in past.dev. A resumed session
    sends its last sitting again, with what was added, as a revision (rule 4 says when). The
@@ -129,6 +134,20 @@ plugin's root as a rule that is always on, and this file is for contributors, no
     keep `past`: the plugin's name, the skills (`/past:status`), the tool (`past_recall`), `~/.past`,
     the key prefix `past_sk_`, the data point ids and the recall block's header,
     `=== past · recalled from memory ===`, which the journal reader drops by that exact text.
+14. **A prompt belongs to the connection it was typed under.** `prompt` journals every prompt with
+    `connection`, a fingerprint of the key and the address in force (the first 16 hex characters of
+    their SHA-256, never the key). A prompt typed under another connection than the sitting's starts
+    a new sitting (`sittingsOf`), so a sitting is one connection's, and only the sittings of the
+    connection in force are sent (`planSend`). Sittings are numbered over the whole journal, whoever
+    they belong to, so an id never depends on which key reads the session. After `/past:connect`
+    with another project's key, what was typed for the first project stays on the machine, and is
+    sent only if its own key comes back. A prompt 0.1.0 journaled names no connection, and 0.1.0
+    journaled before the machine was connected, so this version sends none of its sittings: what
+    0.1.0 had sent stays as it is in past.dev, what it had not sent stays on the machine, and a
+    session resumed after the update goes on in a new sitting.
+15. **The folder's path stays on the machine.** The journal keeps it, for `deny` and to find the
+    session of the folder a skill runs in. What is sent names the folder (`project`) and the branch
+    (`gitBranch`), and no path.
 
 ## Beside other past.dev plugins
 
@@ -172,7 +191,8 @@ everything else of its own in `~/.past/devin/` and `~/.past/hosts/devin.json`. T
 - `POST /api/v1/ingest/batch`: one item per sitting. `id` gives replacement (`devin:<session id>`
   for the first sitting, `devin:<session id>:<n>` for the others), `timestamp` dates every memory
   drawn from the item, `label` names the session (`Devin · <project> · <branch>`), and `metadata`
-  carries `sessionId`, `project`, `cwd`, `gitBranch`, `sitting` and `turns`.
+  carries `sessionId`, `project` (the folder's name), `gitBranch`, `sitting` and `turns`. The
+  folder's path is not sent (rule 15).
 - `POST /api/v1/recall`: **`identity` is required**. Recall stays off until `/past:connect` sets
   one.
 - `audience` on ingest: a slug; absent means the whole project. `connect --audience` checks it with
@@ -204,8 +224,9 @@ echo '{"session_id":"…","prompt_id":"p1","last_assistant_message":"…"}' | HO
 echo '{"session_id":"…","reason":"exit"}' | HOME=/tmp/past-test node plugins/past/bin/past-hook.mjs end
 ```
 
-A journal written with times in the past makes a session due at once, so `send` can be watched
-sending without waiting half an hour. `mcp` reads JSON-RPC lines on its input: `initialize`,
+A journal entry written by hand needs the `connection` the `prompt` hook gives it (rule 14), so
+let the hook write the journal and move its times back afterwards. A journal with times in the past
+makes a session due at once, so `send` can be watched sending without waiting half an hour. `mcp` reads JSON-RPC lines on its input: `initialize`,
 `tools/list` and `tools/call` with `past_recall`.
 
 On a real Devin, install the plugin from the folder. Devin links its cache to the folder, so a
