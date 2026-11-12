@@ -1,0 +1,66 @@
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  script:
+    name: script on Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [14, 16, 22]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # Node 16 is the floor. On an older Node the hooks only have to stay silent, so 14 parses it.
+      - name: Parses
+        run: node --check plugins/past/bin/past-hook.mjs
+      - name: Runs with nothing configured
+        if: matrix.node != 14
+        run: |
+          node plugins/past/bin/past-hook.mjs status
+          echo '{"session_id":"check","source":"startup"}' | node plugins/past/bin/past-hook.mjs start
+          echo '{"session_id":"check","prompt_id":"p1","prompt":"Does the prompt hook answer?"}' | node plugins/past/bin/past-hook.mjs prompt
+          echo '{"session_id":"check","prompt_id":"p1","last_assistant_message":"It does."}' | node plugins/past/bin/past-hook.mjs stop
+        env:
+          HOME: ${{ runner.temp }}/home
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # A manifest that does not hold together loads nothing, and says nothing.
+      - name: The manifests hold together
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, existsSync, readdirSync } from "node:fs";
+            import { join } from "node:path";
+            const read = (path) => JSON.parse(readFileSync(path, "utf8"));
+            const fail = (message) => { console.error(message); process.exit(1); };
+            const root = "plugins/past";
+            const manifest = read(join(root, ".devin-plugin/plugin.json"));
+            if (!/^[a-z0-9]+([.-][a-z0-9]+)*$/.test(manifest.name)) fail(`plugin.json: ${manifest.name} is not a valid name`);
+            for (const path of manifest.mcpServers.paths) read(join(root, path));
+            if (manifest.logo && !existsSync(join(root, manifest.logo))) fail(`plugin.json: no ${manifest.logo}`);
+            // Devin refuses a hooks file that names an event it does not know.
+            const known = ["PreToolUse", "PostToolUse", "PermissionRequest", "UserPromptSubmit", "Stop", "PostCompaction", "SessionStart", "SessionEnd"];
+            for (const event of Object.keys(read(join(root, "hooks.json")).hooks)) {
+              if (!known.includes(event)) fail(`hooks.json: Devin knows no event ${event}`);
+            }
+            for (const skill of readdirSync(join(root, "skills"))) {
+              const text = readFileSync(join(root, "skills", skill, "SKILL.md"), "utf8");
+              if (!new RegExp(`^name: ${skill}$`, "m").test(text)) fail(`skills/${skill}: its name is not its folder`);
+            }
+            console.log(`${manifest.name}: ok`);
+          '

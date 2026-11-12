@@ -1,0 +1,22 @@
+{
+  "name": "past",
+  "displayName": "past.dev",
+  "version": "0.1.0",
+  "description": "Turn Devin sessions into long-term memory, and get earlier decisions and their reasons recalled beside every prompt",
+  "shortDescription": "Long-term memory for coding sessions",
+  "setup": {
+    "notice": "Works in local sessions, in the Devin CLI and Devin Desktop, with Node 16 or later. Cloud sessions do not run a plugin's hooks.",
+    "steps": [
+      "Create a project API key in the past.dev console, under Build › API keys",
+      "Start a session and run /past:connect <project-api-key> <identity>",
+      "Run /past:status to check the connection"
+    ]
+  },
+  "logo": "assets/logo.svg",
+  "author": { "name": "past.dev", "url": "https://past.dev" },
+  "homepage": "https://past.dev",
+  "repository": "https://github.com/pastdotdev/devin-plugin",
+  "license": "MIT",
+  "keywords": ["memory", "recall", "context", "mcp"],
+  "mcpServers": { "paths": [".devin-plugin/mcp.json"], "exclusive": true }
+}
