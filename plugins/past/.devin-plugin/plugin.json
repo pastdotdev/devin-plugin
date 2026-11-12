@@ -1,7 +1,7 @@
 {
   "name": "past",
   "displayName": "past.dev",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turn Devin sessions into long-term memory, and get earlier decisions and their reasons recalled beside every prompt",
   "shortDescription": "Long-term memory for coding sessions",
   "setup": {
