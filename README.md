@@ -21,7 +21,10 @@ That block is what the model reads beside your prompt. It arrives on its own: th
 have to decide to look anything up. For more, the agent calls the `past_recall` tool.
 
 The plugin runs where the session runs: on your machine in the Devin CLI and Devin Desktop, and
-on the session's machine in a cloud session.
+on the session's machine in a cloud session. A cloud session starts on a new machine, so the
+connection lasts that session: run `/past:connect` at the start of each one. A cloud session never
+ends with a hook, so it is sent once it has been quiet for its sitting length, or at once with
+`/past:ingest`.
 
 ## Get started
 

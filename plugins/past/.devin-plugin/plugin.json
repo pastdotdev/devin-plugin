@@ -1,11 +1,11 @@
 {
   "name": "past",
   "displayName": "past.dev",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Turn Devin sessions into long-term memory, and get earlier decisions and their reasons recalled beside every prompt",
   "shortDescription": "Long-term memory for coding sessions",
   "setup": {
-    "notice": "Needs Node 16 or later on the machine the session runs on, in the cloud as in the Devin CLI and Devin Desktop.",
+    "notice": "Needs Node 16 or later where the session runs. A cloud session starts on a new machine, so run /past:connect at the start of each cloud session.",
     "steps": [
       "Create a project API key in the past.dev console, under Build › API keys",
       "Start a session and run /past:connect <project-api-key> <identity>",

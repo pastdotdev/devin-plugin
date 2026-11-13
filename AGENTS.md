@@ -190,6 +190,12 @@ everything else of its own in `~/.past/devin/` and `~/.past/hosts/devin.json`. T
 - **Plugin hooks are best effort.** Devin runs them in local sessions (the CLI and Devin Desktop)
   and in cloud sessions, and a hook that fails is let through. A cloud session never fires
   `SessionEnd`, and its `SessionStart` runs in the background.
+- **A cloud prompt arrives in Devin's envelope.** The prompt hook's `prompt` is
+  `<received_chat_message from=… git_author_email=… message_id=… sent_at=…>text</received_chat_message>`
+  in a cloud session (measured on 12 November 2026). `promptTextOf` takes the text out before it is
+  journaled or recalled: the envelope carries the person's email and Devin's ids, and it hides a
+  skill's name from `isSynthetic`. A cloud session's machine is new each time, so `~/.past` and the
+  connection last one session.
 - **Node is found by `bin/past`.** Devin starts the hooks and the MCP server in a shell that has not
   read the person's profile, so a Node installed with nvm, Volta or fnm is not on its path. Devin's
   cloud machines have Node only under `~/.nvm`, and a bare `node` there exits 127 (measured on
