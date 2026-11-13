@@ -37,6 +37,7 @@ plugins/past/
   .devin-plugin/mcp.json      past_recall: the script in its mcp mode
   hooks.json                  SessionStart, UserPromptSubmit, Stop, SessionEnd
   skills/                     past, connect, status, cut, ingest
+  bin/past                    finds Node and runs bin/past-hook.mjs, for the hooks and the MCP server
   bin/past-hook.mjs           the whole plugin, one file, no dependencies
   assets/logo.svg             the logo the manifest names
   LICENSE                     the same license, for an install that copies this folder alone
@@ -164,7 +165,10 @@ everything else of its own in `~/.past/devin/` and `~/.past/hosts/devin.json`. T
   an empty `matcher`, which runs it for every occurrence of an event that has no tool.
 - **The plugin's folder is `${PLUGIN_ROOT}`.** Devin sets `PLUGIN_ROOT` in every hook's
   environment, where the shell expands it, and expands `${PLUGIN_ROOT}` itself in `mcp.json`'s
-  `args`. It sets `DEVIN_PLUGIN_ROOT` in the environment too, but does not expand that one in
+  `args` in the CLI. A cloud session leaves it unexpanded for a plugin uploaded as a zip (measured
+  on 12 November 2026), so `mcp.json` starts a short `sh -c` that takes the expanded argument, then
+  `PLUGIN_ROOT` or `CLAUDE_PLUGIN_ROOT` from the environment, then the working folder, then the
+  folder the hooks' launcher (`~/.past/devin/past.mjs`) names. It sets `DEVIN_PLUGIN_ROOT` in the environment too, but does not expand that one in
   `mcp.json`: the server then fails to list its tools (measured on 3000.11.234).
 - **The project comes from `DEVIN_PROJECT_DIR`.** Devin sets it to the project's root in every
   hook's environment, and runs the hook in that folder. The input's `cwd` and the hook's own folder
@@ -183,8 +187,21 @@ everything else of its own in `~/.past/devin/` and `~/.past/hosts/devin.json`. T
   `~/.config/devin/config.json`.
 - **A session id is a name** (`pickled-cook`), and `devin -r <name>` resumes it. The commands print
   it whole.
-- **Plugin hooks are best effort.** Devin runs them in local sessions (the CLI and Devin Desktop),
-  and a hook that fails is let through. Cloud sessions run no plugin hook.
+- **Plugin hooks are best effort.** Devin runs them in local sessions (the CLI and Devin Desktop)
+  and in cloud sessions, and a hook that fails is let through. A cloud session never fires
+  `SessionEnd`, and its `SessionStart` runs in the background.
+- **A cloud prompt arrives in Devin's envelope.** The prompt hook's `prompt` is
+  `<received_chat_message from=… git_author_email=… message_id=… sent_at=…>text</received_chat_message>`
+  in a cloud session (measured on 12 November 2026). `promptTextOf` takes the text out before it is
+  journaled or recalled: the envelope carries the person's email and Devin's ids, and it hides a
+  skill's name from `isSynthetic`. A cloud session's machine is new each time, so `~/.past` and the
+  connection last one session.
+- **Node is found by `bin/past`.** Devin starts the hooks and the MCP server in a shell that has not
+  read the person's profile, so a Node installed with nvm, Volta or fnm is not on its path. Devin's
+  cloud machines have Node only under `~/.nvm`, and a bare `node` there exits 127 (measured on
+  12 November 2026). `bin/past` looks on the path, then `$NVM_BIN`, the newest `~/.nvm` version,
+  Volta, fnm, `/usr/local/bin` and `/opt/homebrew/bin`. The skills still run `node`: they run in
+  the agent's own shell, which has it.
 
 ## Contracts this depends on
 

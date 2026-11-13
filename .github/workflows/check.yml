@@ -30,6 +30,9 @@ jobs:
           echo '{"session_id":"check","source":"startup"}' | node plugins/past/bin/past-hook.mjs start
           echo '{"session_id":"check","prompt_id":"p1","prompt":"Does the prompt hook answer?"}' | node plugins/past/bin/past-hook.mjs prompt
           echo '{"session_id":"check","prompt_id":"p1","last_assistant_message":"It does."}' | node plugins/past/bin/past-hook.mjs stop
+          # The hooks and the MCP server start through the launcher, which finds Node off the path.
+          echo '{"session_id":"check","source":"startup"}' | PATH=/usr/bin:/bin NVM_BIN="$(dirname "$(command -v node)")" sh plugins/past/bin/past start
+          sh plugins/past/bin/past status
         env:
           HOME: ${{ runner.temp }}/home
 

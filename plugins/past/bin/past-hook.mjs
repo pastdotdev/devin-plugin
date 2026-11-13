@@ -48,7 +48,7 @@ const MIN_SITTING_KILOBYTES = 10;
 const CREDIT_PAUSE_MS = { ingest: 30 * 60000, recall: 5 * 60000 };
 const DEFAULT_API_URL = 'https://api.past.dev';
 const MARKER = '=== past · recalled from memory ===';
-const VERSION = '0.1.1';
+const VERSION = '0.1.3';
 
 // ----------------------------------------------------------------------------------------- Devin
 
@@ -225,6 +225,19 @@ function pause(ms) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0
 
 // A prompt that only runs one of the plugin's skills is not conversation, and neither is past.dev's
 // own recall block: without the marker here, past.dev would read its recall back and cite itself.
+// In a cloud session Devin hands the prompt hook the message wrapped in its own envelope:
+// <received_chat_message from=… git_author_email=… source=… message_id=… sent_at=…>text</…>, one per
+// message when several were queued. The envelope carries the person's email and Devin's ids, which
+// the plugin does not send, and hides a skill's name from isSynthetic, so the text is taken out of it.
+const ENVELOPE_OPEN = /<received_chat_message\b[^>]*>/g;
+const ENVELOPE_CLOSE = /<\/received_chat_message>/g;
+
+function promptTextOf(raw) {
+  if (typeof raw !== 'string') return '';
+  if (!/^\s*<received_chat_message\b/.test(raw)) return raw;
+  return raw.replace(ENVELOPE_OPEN, '').replace(ENVELOPE_CLOSE, '\n\n').trim();
+}
+
 function isSynthetic(text) {
   if (typeof text !== 'string' || !text) return false;
   const start = text.trimStart();
@@ -769,7 +782,7 @@ async function modePrompt(config) {
   stampHook();
   writeLauncher();
   const session = sessionOf(input);
-  const prompt = typeof input.prompt === 'string' ? input.prompt : '';
+  const prompt = promptTextOf(input.prompt);
   const place = placeOf(input);
   if (!prompt || denied(config, place.cwd)) return;
   // Nothing is journaled before the machine is connected.
